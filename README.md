@@ -1,1116 +1,866 @@
-<!DOCTYPE html>
+* {
 
-<html lang="en">
+  box-sizing: border-box;
 
-	<head>
+  padding: 0;
 
-		<meta charset="UTF-8" />
+  margin: 0;
 
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  user-select: none;
 
-		<title>Simple Game</title>
+  -webkit-user-select: none;
 
-		<style>
+}
 
-			body {
 
-				background: #222;
 
-			}
+p, h1, h2, h3, h4 {
 
+  display: inline-block;
 
+  margin-block-start: 0em;
 
-			h2 {
+  margin-block-end: 0em;
 
-				color: #666;
+  margin-inline-start: 0px;
 
-				font-family: monospace;
+  margin-inline-end: 0px;
 
-				text-align: center;
+  padding-inline-start: 0px;
 
-			}
+}
 
 
 
-			.background {
+body {
 
-				table-layout: fixed;
+  background-color: #9edae9;
 
-				border-spacing: 0;
+  font-family: Arial, Helvetica, sans-serif;
 
-			}
+  overscroll-behavior: contain;
 
+}
 
 
-			.background td {
 
-				padding: 0;
+.wrapper {
 
-			}
+  position: fixed;
 
+  top: 0;
 
+  left: 0;
 
-			.lava,
+  width: 100%;
 
-			.actor {
+  height: 100%;
 
-				background: #e55;
+  pointer-events: none;
 
-			}
+}
 
 
 
-			.wall {
+.bunny-radar {
 
-				background: #444;
+  position: absolute;
 
-				border: solid 3px #333;
+  top: 0;
 
-				box-sizing: content-box;
+  left: 0;
 
-			}
+  width: 100%;
 
+  height: 100%;
 
+  display: flex;
 
-			.actor {
+  justify-content: center;
 
-				position: absolute;
+  align-items: center;
 
-			}
+  pointer-events: none;
 
+}
 
 
-			.coin {
 
-				background: #e2e838;
+.circle {
 
-				border-radius: 50%;
+  position: relative;
 
-			}
+  border-radius: 50%;
 
+  z-index: 1;
 
+  display: flex;
 
-			.player {
+  justify-content: center;
 
-				background: #335699;
+  align-items: center;
 
-				box-shadow: none;
+}
 
-			}
 
 
+.bunny-pos {
 
-			.lost .player {
+  position: absolute;
 
-				background: #a04040;
+  width: var(--size);
 
-			}
+  height: var(--size);
 
+  border-radius: 50%;
 
+  display: flex;
 
-			.won .player {
+  justify-content: center;
 
-				background: green;
+}
 
-			}
 
 
+.bunny-pos::after {
 
-			.game {
+  position: absolute;
 
-				position: relative;
+  content: '';
 
-				overflow: hidden;
+  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAAXNSR0IArs4c6QAAADhJREFUKFNjtFlz4j8DEYARpIYYxWCFxCiGKySkGEUhPsUYCnEpxqoQm2KcCtEV41WIrJigQphiAH0JGuGElBe4AAAAAElFTkSuQmCC);
 
-			}
+  width: 20px;
 
-		</style>
+  height: 20px;
 
-	</head>
+  background-size: 20px;
 
-	<body>
+  background-repeat: no-repeat;
 
-		<h2>Simple JavaScript Game</h2>
+  image-rendering: pixelated;
 
+  bottom: -24px;
 
+  transform: rotate(135deg);
 
-		<script>
+}
 
-			var LEVELS = [
 
-				[
 
-					'                                                                                ',
+.bunny-indicator {
 
-					'                                                                                ',
+  position: absolute;
 
-					'                                                                                ',
+  bottom: 0;
 
-					'                                                                                ',
+  color: #3cacc8;
 
-					'                                                                                ',
+  font-size: 0.8rem;
 
-					'                                                                                ',
+}
 
-					'                                                                  xxx           ',
 
-					'                                                   xx      xx    xx!xx          ',
 
-					'                                    o o      xx                  x!!!x          ',
+.end-message {
 
-					'                                                                 xx!xx          ',
+  position: fixed;
 
-					'                                   xxxxx                          xvx           ',
+  height: 100%;
 
-					'                                                                            xx  ',
+  width: 100%;
 
-					'  xx                                      o o                                x  ',
+  display: flex;
 
-					'  x                     o                                                    x  ',
+  align-items: center;
 
-					'  x                                      xxxxx                             o x  ',
+  justify-content: center;
 
-					'  x          xxxx       o                                                    x  ',
+  flex-direction: column;
 
-					'  x  @       x  x                                                xxxxx       x  ',
+  z-index: 99999;
 
-					'  xxxxxxxxxxxx  xxxxxxxxxxxxxxx   xxxxxxxxxxxxxxxxxxxx     xxxxxxx   xxxxxxxxx  ',
+  animation: fade-in forwards 1s;
 
-					'                              x   x                  x     x                    ',
+  pointer-events: all;
 
-					'                              x!!!x                  x!!!!!x                    ',
+}
 
-					'                              x!!!x                  x!!!!!x                    ',
 
-					'                              xxxxx                  xxxxxxx                    ',
 
-					'                                                                                ',
+.end-message p {
 
-					'                                                                                ',
+  color: #57280f;
 
-				],
+  background-color: #ffffff8b;
 
-				[
+  width: 240px;
 
-					'                                      x!!x                        xxxxxxx                                    x!x  ',
+  padding: 30px;
 
-					'                                      x!!x                     xxxx     xxxx                                 x!x  ',
+  text-align: center;
 
-					'                                      x!!xxxxxxxxxx           xx           xx                                x!x  ',
+  transform: translateY(calc(-100% - 10px));
 
-					'                                      xx!!!!!!!!!!xx         xx             xx                               x!x  ',
+}
 
-					'                                       xxxxxxxxxx!!x         x                                    o   o   o  x!x  ',
 
-					'                                                xx!x         x     o   o                                    xx!x  ',
 
-					'                                                 x!x         x                                xxxxxxxxxxxxxxx!!x  ',
+button {
 
-					'                                                 xvx         x     x   x                        !!!!!!!!!!!!!!xx  ',
+  font-family: Arial, Helvetica, sans-serif;
 
-					'                                                             xx  |   |   |  xx            xxxxxxxxxxxxxxxxxxxxx   ',
+  border: 0;
 
-					'                                                              xx!!!!!!!!!!!xx            v                        ',
+  padding: 10px 20px;
 
-					'                                                               xxxx!!!!!xxxx                                      ',
+  color: #4d220a;
 
-					'                                               x     x            xxxxxxx        xxx         xxx                  ',
+  background-color: #c3ac83;
 
-					'                                               x     x                           x x         x x                  ',
+  cursor: pointer;
 
-					'                                               x     x                             x         x                    ',
+}
 
-					'                                               x     x                             xx        x                    ',
 
-					'                                               xx    x                             x         x                    ',
 
-					'                                               x     x      o  o     x   x         x         x                    ',
+button:hover {
 
-					'               xxxxxxx        xxx   xxx        x     x               x   x         x         x                    ',
+  background-color: #fff;
 
-					'              xx     xx         x   x          x     x     xxxxxx    x   x   xxxxxxxxx       x                    ',
+}
 
-					'             xx       xx        x o x          x    xx               x   x   x               x                    ',
 
-					'     @       x         x        x   x          x     x               x   x   x               x                    ',
 
-					'    xxx      x         x        x   x          x     x               x   xxxxx   xxxxxx      x                    ',
+@keyframes fade-in {
 
-					'    x x      x         x       xx o xx         x     x               x     o     x x         x                    ',
+  0% {
 
-					'!!!!x x!!!!!!x         x!!!!!!xx     xx!!!!!!!!xx    x!!!!!!!!!!     x     =     x x         x                    ',
+    opacity: 0;
 
-					'!!!!x x!!!!!!x         x!!!!!xx       xxxxxxxxxx     x!!!!!!!xx!     xxxxxxxxxxxxx xx  o o  xx                    ',
+  }
 
-					'!!!!x x!!!!!!x         x!!!!!x    o                 xx!!!!!!xx !                    xx     xx                     ',
+  100% {
 
-					'!!!!x x!!!!!!x         x!!!!!x                     xx!!!!!!xx  !                     xxxxxxx                      ',
+    opacity: 1;
 
-					'!!!!x x!!!!!!x         x!!!!!xx       xxxxxxxxxxxxxx!!!!!!xx   !                                                  ',
+  }
 
-					'!!!!x x!!!!!!x         x!!!!!!xxxxxxxxx!!!!!!!!!!!!!!!!!!xx    !                                                  ',
+}
 
-					'!!!!x x!!!!!!x         x!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!xx     !                                                  ',
 
-				],
 
-				[
+.d-none {
 
-					'                                                                                                              ',
+  display: none;
 
-					'                                                                                                              ',
+}
 
-					'                                                                                                              ',
 
-					'                                                                                                              ',
 
-					'                                                                                                              ',
+.bunny {
 
-					'                                        o                                                                     ',
+  pointer-events: none;
 
-					'                                                                                                              ',
+}
 
-					'                                        x                                                                     ',
 
-					'                                        x                                                                     ',
 
-					'                                        x                                                                     ',
+.bunny::after {
 
-					'                                        x                                                                     ',
+  background-image: url(data:image/png;base64,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);
 
-					'                                       xxx                                                                    ',
+}
 
-					'                                       x x                 !!!        !!!  xxx                                ',
 
-					'                                       x x                 !x!        !x!                                     ',
 
-					'                                     xxx xxx                x          x                                      ',
+.sad .bunny::after {
 
-					'                                      x   x                 x   oooo   x       xxx                            ',
+  background-image: url(data:image/png;base64,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);
 
-					'                                      x   x                 x          x      x!!!x                           ',
+}
 
-					'                                      x   x                 xxxxxxxxxxxx       xxx                            ',
 
-					'                                     xx   xx      x   x      x                                                ',
 
-					'                                      x   xxxxxxxxx   xxxxxxxx              x x                               ',
+.happy-right .bunny::after,
 
-					'                                      x   x           x                    x!!!x                              ',
+.happy-left .bunny::after {
 
-					'                                      x   x           x                     xxx                               ',
+  background-position: 0;
 
-					'                                     xx   xx          x                                                       ',
+  background-size: calc(var(--w) * var(--m)) calc(var(--h) * var(--m));
 
-					'                                      x   x= = = =    x            xxx                                        ',
+}
 
-					'                                      x   x           x           x!!!x                                       ',
 
-					'                                      x   x    = = = =x     o      xxx       xxx                              ',
 
-					'                                     xx   xx          x                     x!!!x                             ',
+.happy-right::before,
 
-					'                              o   o   x   x           x     x                xxv        xxx                   ',
+.happy-left::before{
 
-					'                                      x   x           x              x                 x!!!x                  ',
+  position: absolute;
 
-					'                             xxx xxx xxx xxx     o o  x!!!!!!!!!!!!!!x                   vx                   ',
+  top: -50px;
 
-					'                             x xxx x x xxx x          x!!!!!!!!!!!!!!x                                        ',
+  left: calc(var(--m) * -0.5 * var(--h));
 
-					'                             x             x   xxxxxxxxxxxxxxxxxxxxxxx                                        ',
+  width: calc(var(--m) * var(--h));
 
-					'                             xx           xx                                         xxx                      ',
+  content: attr(message);
 
-					'  xxx                         x     x     x                                         x!!!x                xxx  ',
+  font-size: 0.8em;
 
-					'  x x                         x    xxx    x                                          xxx                 x x  ',
+  text-align: center;
 
-					'  x                           x    xxx    xxxxxxx                        xxxxx                             x  ',
+  color: #57280f;
 
-					'  x                           x           x                              x   x                             x  ',
+  animation: display forwards 0.8s;
 
-					'  x                           xx          x                              x x x                             x  ',
+}
 
-					'  x                                       x       |xxxx|    |xxxx|     xxx xxx                             x  ',
 
-					'  x                xxx             o o    x                              x         xxx                     x  ',
 
-					'  x               xxxxx       xx          x                             xxx       x!!!x          x         x  ',
+@keyframes display {
 
-					'  x               oxxxo       x    xxx    x                             x x        xxx          xxx        x  ',
+  0% {
 
-					'  x                xxx        xxxxxxxxxxxxx  x oo x    x oo x    x oo  xx xx                    xxx        x  ',
+    transform: translateY(0);
 
-					'  x      @          x         x           x!!x    x!!!!x    x!!!!x    xx   xx                    x         x  ',
+  }
 
-					'  xxxxxxxxxxxxxxxxxxxxxxxxxxxxx           xxxxxxxxxxxxxxxxxxxxxxxxxxxxx     xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  ',
+  90% {
 
-					'                                                                                                              ',
+    transform: translateY(-30px);
 
-					'                                                                                                              ',
+    opacity: 1;
 
-				],
+  }
 
-				[
+  100% {
 
-					'                                                                                                  xxx x       ',
+    transform: translateY(-30px);
 
-					'                                                                                                      x       ',
+    opacity: 0;
 
-					'                                                                                                  xxxxx       ',
+  }
 
-					'                                                                                                  x           ',
+}
 
-					'                                                                                                  x xxx       ',
 
-					'                          o                                                                       x x x       ',
 
-					'                                                                                             o o oxxx x       ',
+.happy-right .bunny::after {
 
-					'                   xxx                                                                                x       ',
+  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAAXNSR0IArs4c6QAAAP5JREFUSEvdljESAiEMRaWz02PoabbUI2q5p9FjrJ0dTpjJTghsvhDGQhpmYfMIyScQdoNb6OFdTodIdvfnq7CvAi0Dmrs9luTH9XwsoAXQMpBzvDMNzYDIAM3TIn8A5OBTz8mQymiOIZLV74C1DCLvatJJWfbANNQNpBhysgI15KE00CHgOe4hUBugmEKgBrznORvaT1P2vQJpNMaYShJqDNUw1uN6lj2ZluKGxQF5vHlShnvoAcrqDXX4zZZJ2FlSPN5JrdKlVXhonYyat/S/vAGHAOV1mulwqypbcewusLVQNN/Lutbp5LmBXOp4oeaniGW4Fdeux5KVpOHADwr6DjBMkjHBAAAAAElFTkSuQmCC);
 
-					'       !  o  !                                                xxxxx xxxxx xxxxx xxxxx xxxxx xxxxx xxxxx       ',
+}
 
-					'       x     x                                                x   x x   x x   x x   x x   x x   x x           ',
 
-					'       x= o  x            x                                   xxx x xxx x xxx x xxx x xxx x xxx x xxxxx       ',
 
-					'       x     x                                                  x x   x x   x x   x x   x x   x x     x       ',
+.happy-left .bunny::after {
 
-					'       !  o  !            o                                  xxxx xxxxx xxxxx xxxxx xxxxx xxxxx xxxxxxx       ',
+  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAAXNSR0IArs4c6QAAAQNJREFUSEvdlj0OwjAMhcnGBseA03SEI8LY08AxYGMLctCr7NSxEyUw0KVS03x+/k3CZvATNN7psIv0/Xp/quuWhtUGgl1uj7TnfNyrUMugAHIYVORQz2ATsMbgHwCRHHojWTzLeYxdl70y/R1Qy6CnTiut5HIPLIcmYIwxtRrFQwt8jVLEcgECZkG9Nep9odBS4hlcKeSw1zwL9naaXK8FUEsKoDUwshbCx9ulsHsyzYv7e50yVGEPLJ/solOGFTYUDgOin0szr1SEXICoQ2xojeVwIJ/mOMPNc5mPptIUMie2NhuxoeYIFa3HA4+bAb+OdAFLWeWGuDH+f/NlyJtjw4FvuiQXMCR6vxcAAAAASUVORK5CYII=);
 
-					'                                                                                                              ',
+}
 
-					'          o              xxx                              xx                                                  ',
 
-					'                                                                                                              ',
 
-					'                                                                                                              ',
+.hug-bunny-bear .bunny,
 
-					'                                                      xx                                                      ',
+.hug-bear-bunny .bunny {
 
-					'                   xxx         xxx                                                                            ',
+  --w: 32px;
 
-					'                                                                                                              ',
+  top: -42px;
 
-					'                          o                                                     x      x                      ',
+}
 
-					'                                                          xx     xx                                           ',
 
-					'             xxx         xxx         xxx                                 x                  x                 ',
 
-					'                                                                                                              ',
+.hug-bunny-bear .bunny::after,
 
-					'                                                                 ||                                           ',
+.hug-bear-bunny .bunny::after {
 
-					'  xxxxxxxxxxx                                                                                                 ',
+  background-position: 0;
 
-					'  x         x o xxxxxxxxx o xxxxxxxxx o xx                                                x                   ',
+  background-size: calc(var(--w) * var(--m));
 
-					'  x         x   x       x   x       x   x                 ||                  x     x                         ',
+  image-rendering: pixelated;
 
-					'  x  @      xxxxx   o   xxxxx   o   xxxxx                                                                     ',
+}
 
-					'  xxxxxxx                                     xxxxx       xx     xx     xxx                                   ',
 
-					'        x=                  =                =x   x                     xxx                                   ',
 
-					'        xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx   x!!!!!!!!!!!!!!!!!!!!!xxx!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!',
+.hug-bear-bunny .bunny::after {
 
-					'                                                  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAZdJREFUWEfFl8FNBDEMRScHzuyBIqABWgEhrWgARDHQAJygFCqAHrhAAYjVX+kjj9eOE2dGO5edTTLxG9vfzpTpyFc5sv1pGODq/PQPL/H2+TPbyxvXLzwEACOvH9/7Pa8vNv8Q3rjl7TSANCI3BgihOC7hFvPAqgCMH2l1fDku18lQDHkAmz49P848dXd7byaZXIc1MDwcAgsANDAgLwtyVYCoXizmARjyvOBB0HgN0lOCKcNeAIZIJ58GsiAOADLGaSjyRAoAmzLh5L00innOnV1uZ0qQqkgBSAXozNcQ+A8Almb8yrCkAWQsI48QwErIRQAijwwDZGSIZ35PNtPDzfagEUUNye2GkRp0ZdTx1h3S6yfVdvz1/rI/bLRengxLKa6dtAd6qmLqPBCFQEqQ914l7AZoMc4ciMpvKglbAGTRsWp+SxHCmqFmZCnBU8Pq3bBWgFiaLSl2q8BrSN5pqGbcDYFXDXk21DlSOw2lASyIDEBNglUP1AA4x+xHbHlE7zmShwCWoagst35TcJ/0p1kE0jq/A+eTbjBgLTdgAAAAAElFTkSuQmCC);
 
-					'                                                                                                              ',
+  animation: hug-bear-bunny forwards 1.8s;
 
-				],
+}
 
-			];
 
 
+@keyframes hug-bear-bunny {
 
-			function Vector(x, y) {
+  0%, 4%, 95%, 100% {
 
-				this.x = x;
+    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAqJJREFUeF7tWstNRDEM3HfgDAeKgAZoBYSEaABEMdAAnKAUKoAeuEABCMTuM2IHecd2kvdL9rS7+byX8dgeJ+lWlX+6yte/mhwAp0f7X3+N8vT6UfQdi04eYVe1AMjCH1/et3A7Oz5Y/2ZMiAI3GQZUC4C2cHQfjQmpwI3OgAZAH/XR9xkDUoGT+WfLgAZAkDnIrMYARATzKbazfGydT+aJUjk6jjKgWgBk4Xf3tzsV7NXltUuZafPJPPIwlgWkn+gBb3+Nub8xoAHQR1XGALEEWhBpw+aR8VZLRgqrnzGslnAzoAEQNQWMmz0DUnGYHACyIGswjAIw1MJZLaHWAg0AZzaYOxP+1QKlGYBZpHQaZK4QToNRy+O4oWMC6oIGgDX6i6VQ4Wn/a5aW8TgOmWDV/Fo/9r/UBmYGVA+AJoGZ5mdMkPbDk4v1V6vlteDGqsvkGIBFUHUAaNE/1UWEAZpltRMjbxpNZkADgAiAqItoDMCdIObjTJ8UY0BqkBwdAKseYAhb2z/3Nqe+N+eb6O/1ZetzkEG4NzhaLTBZAIZiwlA1gHlPEClVuiqcPAACyNvzw9adHa/vsf4s+LHxrL3rup3Hf/RssFoA0AVSlZ5mqSgDWLUnWSVbDGgA9GeC7KzPWxx5GcCqRWwvzgBUgLMHgKW/3K6QiwFWZiQrwQaAEguse4PoMt4awBr9tX2FyTAgqgRHByC17E1lQHR/QMsG4WowuvGxGACYBmftURdg82rt2RkQfZFcDPA+3wxAdD9gqCyQa+Eyj1oNMkGEL1ItAHhvkAGn9Wd6gCk9r+9nY8BiAbDGgtIAYPDKdUeYMqAB0CPg9WkEDn1Tu7OrXdLG/pNnwOIAiC7Im6+9/XNd66e7wg0Ar2lm1t/MgJmty/y63yKelm4lf6/tAAAAAElFTkSuQmCC);
 
-				this.y = y;
+  }
 
-			}
+  5%, 9%, 90%, 94% {
 
+    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAplJREFUeF7tWttNAzEQzFUAHxQBDdAK/CAagGqgAfiCUqgAeuAHKgAJZaVk0GR2fbZzPjt/ie077+zsYxxPm84/U+f2bxYDwNX5yc+uM14/vqvsrcpLPCzrFgAz/OX9aw+n64vTv++KCXOBOzoDugWAGY7hwpgwFzh7z9EYMADYZn2MfcWAucDh85tjwAAgkTmsFA8GMGSwvuI8VZ9xvnoeywVYBaqFgNrwagEwwx+fHg52sHe396FOzfs8xQRVNWzT3k7yXw4YAGyzrPKYIW1MYHSJPsfrYSWwijNgAKBcEBw3JjXHgKCddPpiALAdepPhXAByG660hFsLDACC1aBVJlAtUIsBWE1yJUFvKCQ3QnM9ztaXygmsLxgAMNXGOjjzEI6z3/H5OI+tO7u8OUgy8yg7TfaeMocZ0D0ArAX29vy4nq1TDEDVZ9+VmkQZH2bAAECk/7khosoii31VlapVge4ByBUilgPMcyrGF8OA5gGorQZZn5CrJVYnQ4vRAir5KYqz8WQAajEBzxRred7sk/8MlVaFiwfg8+157+5OKhVZcszlcbavaZoOOlkyoHsAMASU6lPj6Clvz4+9v2KOSn7JOUAZqMZXD4BX7dk8xYDUTvBoDFgNAKr8eamu5jEGpKo+DDHFhOROUBnmZUKzAHgNVPLYe6anWt3oSZCsAioEBgDgEnZPQJ0uRxkQrQrFcgCTsfh7NwBENYL6Bwg9nXoiVI0BqwMg9TwgWh5VTx8FFjWDus4n1aC3GnirQqmTn2gDJMtglAF4b1ABp3JAVP0NAAABlfzcDPAyITcDSt8RHgBsEZBJMJUBuA5j1LIzu5SN2Tv3LfHiDFgdAF6DUuu2d13ua/zuEBgAeF3U2LwwAxqzT273F8R9am6Oncp/AAAAAElFTkSuQmCC);
 
+  }
 
-			Vector.prototype.plus = function (other) {
+  10%, 89% {
 
-				return new Vector(this.x + other.x, this.y + other.y);
+    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAo5JREFUeF7tW0FOwzAQbA6c4cAj4AP9CggJ8QEQj6EfgBM8hRfAH7jAAxCINiu1I7az6ziO3WxviR3HOzs7u3bcbjHzXzdz+xcBQDBgYgQuzo5/tqfw8v61l5Xe/sy8yUPAa5C3f7UAiCHPb587c7w8P1lfIxO8/Znh0j4ZA7wGeftXC4BmiDZhYQQyBftrzGFAFGdAANCrPvOoeC4Y0IsiA2z0EMD0g7HF8jf218bTskIAAOmymAiKp1aPD3sF9fbm7t/8rXleG0/GEY9PrgEBQK/ajAHiafGgRhc2TrMMCABYyWVsb54BRjvVbtUBIDO1imEqAGh46jjegsi8FggAnNkg1YOlmVANAzCLsNKXAWwNBQrA2NTXDBnKhABA2VpDwAczQDyFFZ52HyeA/fD6dHm9fkRbE7D7bJUaADAxsWoArgFYzc+YIO3CANwhkmtNLItrwOwBYGqeqhHIAMZYZMroGsAmNFQkmwdAWyZbNSIA6NMgYxq2ZxPBUqtBec/30ebb4P3VJv97S2Kr4fI+WgcEAMAta13AsgKj9NiedzMgFxPYpikrcDTgvNRPBkAe/Hh92jnZwTzqbfeuBruuM4fz9lySHvobYLYADNWAsZhQLAQCgMx7g5ooHmwWwBBoBoBc1EeDvZ5mGuLVAnMWCAAyx753lSeeZYVS9QwQA2YPgLUkZh5PXQa7S+FcGqBtkDBxs4plMyGgGewNjWYZ0BwAqcth7xci7+kwmZeX+m4NCAB6BKxiiOcG2XOpR2OqZcDBAmANhVIApMZ+sgYEAEYt0M4Oa6fE5RsetrMCqBkGIHOwDmgOAKtBrMRl7bn/p4DvM+8HaBNllGYGsvbqAWAG1N4+mAG1G8jm9wsR+9xfCCflzgAAAABJRU5ErkJggg==);
 
-			};
+  }
 
+}
 
 
-			Vector.prototype.times = function (scale) {
 
-				return new Vector(this.x * scale, this.y * scale);
+.hug-bunny-bear .bunny::after {
 
-			};
+  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAhRJREFUWEfdl71KA0EQx/cCki6ngqWNVc4XEB/EXLBIsLAJSiofRIxWFgkiJJcXER8gXiNYWIp6dkHIyhxOGDc7+3GLCKZJcruz89v/fOxeJP74E4X4bzVjCfZZXlRex2rIOUmbsRw/vJf8aRKLLP+wrqXbrNGIcwJQk2/nuGgr2RTT/M0bgjXQOWkn62KSFxEF+78Aul2aFMAxNc6wDj4D9dRxNgQ6ADAGR5h8dDFdDkAYL0cXy2kn3dMyhNTOG4ArWwCoiUU5jFumzuF5EMDnfC7W6nW2bQDA1ejc2FacATj5bU2rvRuLwXCgnaZzDhNXQlDVOXp9ub9hOZ0UCAGABB2QpFNJKgHQrNdVAD7Db1AAHCGI+ttaBVz9w2505aeWJoYAHMOHKlJJAVVGmyLBOSClXHYuLpsAglMkGKA8XslRays9Om5KQucyxAVtEKgCBeAqgHOu7QN0QZdwuCiwtddhW77XfcAlHLow9Lp99rISDEBDwYXAG8AWf6x9tc5NCnkloQsAOONKzrUJsUnoCqCrBE6VX1GASm5qQDDPCwAMdLdite8jgO0U9E5CWPhgZ0Nmj68/8oq7lCIAPfmo4VnaEcOn1buHtRGpuVAFwNQFrQCHSUPezorlZo73t8X13XPZO9TrNv5Xe0HvqC+mM/6NyfoqlSYNKWRU6jd2eAkFECmkAItFrWZ0blXApfWGzvkCkTGLMOCBzAMAAAAASUVORK5CYII=);
 
+  animation: hug-bunny-bear forwards 1.8s;
 
+}
 
-			var actorchars = {
 
-				'@': Player,
 
-				o: Coin,
+@keyframes hug-bunny-bear {
 
-				'=': Lava,
+  0%, 4%, 95%, 100% {
 
-				'|': Lava,
+    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAp5JREFUeF7tW8tRAzEMJRXAhR6gAkqBEzQA1UADDBdohQagCA5QwTLDRAwRiPckyxvv2tzCyvbq6ekbZ3PQ+d+mc/0PqgNwfnI4/QT56fWj+pkeo1Z/mdUA4FVE5B9f3ncMcnF69PW5FSbQDOgWAK8lLXntl60wATKgWwCiloyu80TuTFmTAVFFousylfLsNQCw0IpaMrrOY7VM2WYYoNOsKOmtF6x9rP0GAKUuIOslr+vKz9pf5OX53f3tn6LXVzdU5SiWt/aRzfV+xQwYABRGJGECaznrOLS+OgOiOHQPgHYh1pJRwKvFgOgLNQcAW8iUKmx1h7UYYGWTX1mgWwD2pfhcLgAZMADYTm/ZSo6NAVaFqP/PpkP2XEvOzAK1GLB4AFgFkGV07W9Ni1FvoCs6nTXEwmxv8Z0F0OzPemHWZRYLgI7S8plVHDGjNAuIxb3MkTkDZMAAAJgwO0aI71q+jHwcMS49C3QPQKmLoPzv9fHZGbAaAESRWgXR3N2fPg/2AgMABdlcTHh7fkBuW/QcTZXTpsLRt2wWAFFomqadOz5RRa11tQE4Prv89woAvB/QLQA6BmQVPJoJUQawlWJaDBgAbG93WV2g97tBYYKXAagX0M+rM0BXgt42uTkAUP7PdoUsAFhm6PsG7u8FBgBGLIjGANQNWjV96SxQ9t07AxYHQGn7m9UVeucE6d0gmvKyJbOXAXosHh2Ghl2AVYyViwLA7q8BK84C3oORfHMAtD4YQfmenQSZLjAA2CKAKkKL2mw9oH8vgO756SiO5JHvV2PAagDwuoJlUdQ9SlRGFvUyAHWBkAEDAGcssH4D5L0Fzsp7GWPFLDgTZIPhagHQrmAh6b3Xjwok9jnLmDADBgCsKRYqB2PAQvWiX/sTefGybppczqgAAAAASUVORK5CYII=);
 
-				v: Lava,
+  }
 
-			};
+  5%, 9%, 90%, 94% {
 
+    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAppJREFUeF7tWstNBDEM3a0ALvQAFVAKnKABqAYaQFygFRqAIjhABYOE1tLuk7zv2TObyUzCDZJ44ufnL9luGv/ZNq7/phgAN5dnwz7Y71+/xb59zMjFLrEaAKKK2P63z58DQ9xenf//PjcTwgxoFoCoJb396I9zM0FmQLMAZC2ZPVc6LVMGZBXJnusAFEagM4ABnqVy9BzeI1ofYHpW5VXDAPXCnsFmB8AuZnkdKz/v4rb/+eXpYMvD/aNUKZrieB6/58mbjAEdABZMnHWPAbbdLOeJZ5ZHORhbJmdAFIfmAUDXUS0aBbpYDIherFoA1DyeVTiaFbLfYdnEjQHNAjCX4qdyhTADOgC76a1ayam+6VWI+HeWFtXvpSvBUzFg8QCoCjALmRzb502LvXrAfNrrHdg5Wgmy2Z93YdVlFgsARmnPgowBbF2NAdgjsApSrgRZDGAWZAqy9eoBYBXcVC4S9XEG7GQM6AAQqLMugtSP+vjsDBgbJKsBwBRhwZAhrq6rQU+Vp1aAtm/2brBaAEox4fvjNWvco+dYF0gZ0AHYITAMw8HbnqnNdSoG2D0vru+ODn7pVLh5ANRsEP2PkFlIZYDXBZocXC8eA5oHIFsIMQYwy1fDgNUBoPo+ywrMNTwGZC1fXSW4WgCYYmgJNlOM9v9RhngvTtK9QPMARINelAEY3ZFRbAaI5ydnQAfACf84EbJt3ti82nY4mwZXA0CpdlhlgBr1Vd+vZh6wWgDUNMkAwK5u7LtADF10HjA2FrD/GVYPQDQWmEKWdxmAUwOgzgHkGNAB2CHALImFEVZe3mNmZAr6qCcn+g7A61ppDBjLADzvKcgAQjnFAWCK2Hr0nT+bJ3jrKmBMvsyADgCDcqHrYQYsVE/32n9CbI5utjRgQAAAAABJRU5ErkJggg==);
 
+  }
 
-			function Player(pos) {
+  10%, 89% {
 
-				this.pos = pos.plus(new Vector(0, -0.5));
+    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAvNJREFUeF7tW71Ow0AMTiuhbvxJjCxMlBdAPAi0YgAxsCAQEw+CKEwMIIRE2xdBPAB0QWJgRPxtCIkgrjEiVoztS5rkeumWXi7Off782b4ktcDzX83z9QeFAbC2OBX+Bb83eCvkXgox+rPwsQFAu5BW5Pmru9dY9LWaU+a4N3jP1SmpjXkLgNaTAFQXeR6L8Fpz1vzVH7ykdo5E4K2NeAuA1JPt5rRxQDdSdwow5xhQARCpOBfLFQPGNQSksWzLADyPU3K4H3weaA83X50FKgCISo5CGjyKKz/qfGkdAGJ8fH6UeKndzb1YFqLsjYwBYNB7ALgYpOqAevAVG4q1jkEQUJ6HSaVhgHcAfH58mDVPNBratZvzQQNOzg+t5hfOgLEFQJr+Urntz+T20nB/oHPWUV1SGvtwUXEW8BaAvBeO3f10c6FiQOYaUAGgrPys3JUwCQqoDlHpcXakWsBqQFEMcAYAqtSVlsD4PHwMGgAexYzg/ue6wtQM8B4A3PTAsbT745omnAXA4zCP0ojcNQCY4C0AlCqnDRHn6wDnAQjDELfiXApOHLcNkcIZ4D0A4M68CyLbQkiq/uXvBqPnCtpSeGQAZMUErAWUoIx64WoGVAAgV2Uljlz9IGXC3PIGW9Yn2bKa9HMhbwGQPh63KhZS7AvsbO6b2do3S9QMqAAQvh8gZQCVFaSxD3acZYAzAGRVCeIFaz3NMWtkhVAFQMa7w9ouL+udIHUlmBUDwLD3AEh7Am7vD2tC6TWA2kTlxE0qls4AQC1YGxrOMsA5AOCGtaWw9gmRlOoYwNJWgmMHwOrCjNkl7t0//6tb2jdF8R4g9cyPMnrQ2jBDZw+676DU3aD3AEi3xvJigDbtYQapGVABECGw3pw0WnB5+5YYltsr8+b/0+vHGMjc2914nMsKO1vRTtCt3TdG1gzwHoDfUIiYEIRDLAHRq4y+BAVGhMHwEWUtsvBVr5vjvqXn1d0glX5avgPANTFlH7fWgLIvTHp/32FrFm4fo1/PAAAAAElFTkSuQmCC);
 
-				this.size = new Vector(0.5, 1);
+  }
 
-				this.speed = new Vector(0, 0);
+}
 
-			}
 
 
+/* hp bar */
 
-			Player.prototype.type = 'player';
+.hug-bear-bunny::after,
 
-			function Lava(pos, ch) {
+.hug-bunny-bear::after {
 
-				this.pos = pos;
+  position: absolute;
 
-				this.size = new Vector(1, 1);
+  top: -55px;
 
-				if (ch === '=') this.speed = new Vector(2, 0);
+  left: calc(-1 * var(--h));
 
-				else if (ch === '|') this.speed = new Vector(0, 2);
+  content: '';
 
-				else if (ch === 'v') {
+  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAGCAYAAACij5zfAAAAAXNSR0IArs4c6QAAADdJREFUOE9jZEAD4Rr8/9HFqMlfeeMjI7J5KByQ5egKqGk5yCx0O0YdMLhCABZH1I53ZPPQ0xgA1HAoB/krc8YAAAAASUVORK5CYII=);
 
-					this.speed = new Vector(0, 3);
+  width: calc(var(--h) * var(--m));
 
-					this.repeatPos = pos;
+  height: calc(6px * var(--m));
 
-				}
+  background-size: calc(var(--h) * var(--m)) calc(6px * var(--m));
 
-			}
+  background-repeat: no-repeat;
 
-			Lava.prototype.type = 'Lava';
+  image-rendering: pixelated;
 
-			function Coin(pos) {
+}
 
-				this.basePos = this.pos = pos;
 
-				this.size = new Vector(0.6, 0.6);
 
-				this.wobble = Math.random() * Math.PI * 2;
+.hug-bear-bunny::before,
 
-			}
+.hug-bunny-bear::before {
 
+  position: absolute;
 
+  top: -55px;
 
-			Coin.prototype.type = 'coin';
+  left: -24px;
 
+  content: '';
 
+  width: calc(24px * var(--m));
 
-			Level.prototype.isFinished = function () {
+  height: calc(6px * var(--m));
 
-				return this.status != null && this.finishDelay < 0;
+  animation: top-up forwards 1.4s;
 
-			};
+}
 
-			function Level(plan) {
 
-				this.width = plan[0].length;
 
-				this.height = plan.length;
+@keyframes top-up {
 
-				this.grid = [];
+  0% {
 
-				this.actors = [];
+    width: 0;
 
+    background-color: #8a8a8a;
 
+  }
 
-				for (var y = 0; y < this.height; y++) {
+  100% {
 
-					var line = plan[y],
+    width: calc(24px * var(--m));
 
-						gridLine = [];
+    background-color: #36e9ce;
 
-					for (var x = 0; x < this.width; x++) {
+  }
 
-						var ch = line[x],
+}
 
-							fieldType = null;
 
-						var Actor = actorchars[ch];
 
-						if (Actor) this.actors.push(new Actor(new Vector(x, y), ch));
+.bear::after {
 
-						else if (ch === 'x') fieldType = 'wall';
+  background-image: url(data:image/png;base64,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);
 
-						else if (ch === '!') fieldType = 'lava';
+}
 
-						else if (ch === '|') fieldType = 'lava';
 
-						else if (ch === '=') fieldType = 'lava';
 
-						else if (ch === 'v') {
+.overflow-hidden {
 
-							fieldType = 'lava';
+  overflow: hidden;
 
-							console.log(fieldType);
+}
 
-						}
 
-						gridLine.push(fieldType);
 
-					}
+.flex-center {
 
-					this.grid.push(gridLine);
+  display: flex;
 
-				}
+  justify-content: center;
 
-				this.player = this.actors.filter(function (actor) {
+  align-items: center;
 
-					return actor.type === 'player';
+}
 
-				})[0];
 
-				this.status = this.finishDelay = null;
 
-			}
+.sprite-container {
 
+  position: absolute;
 
+  --w: 20px;
 
-			function element(name, className) {
+  --h: 32px;
 
-				var elem = document.createElement(name);
+  --m: 2;
 
-				if (className) elem.className = className;
+  width: 0;
 
-				return elem;
+  height: 0;
 
-			}
+  z-index: 1;
 
+}
 
 
-			function DOMDisplay(parent, level) {
 
-				this.wrap = parent.appendChild(element('div', 'game'));
+.sprite-container:has(.bunny) {
 
-				this.level = level;
+  transition: 1s;
 
+}
 
 
-				this.wrap.appendChild(this.drawBackground());
 
-				this.actorLayer = null;
+.sprite  {
 
-				this.drawFrame();
+  position: absolute;
 
-			}
+  --x: 3; /* grid */
 
+  --y: 4;
 
+  top: calc(-1 * var(--w));
 
-			var scale = 15;
+  left: calc(-1 * var(--w));
 
+  --width: calc(var(--w) * var(--m));
 
+  --height: calc(var(--h) * var(--m));
 
-			DOMDisplay.prototype.drawBackground = function () {
+  width: var(--width);
 
-				var table = element('table', 'background');
+  height: var(--width);
 
-				table.style.width = this.level.width * scale + 'px';
+}
 
-				table.style.height = this.level.height * scale + 'px';
 
-				this.level.grid.forEach(function (row) {
 
-					var rowElement = table.appendChild(element('tr'));
+.sprite::after {
 
-					rowElement.style.height = scale + 'px';
+  position: absolute;
 
-					row.forEach(function (type) {
+  bottom: 0;
 
-						rowElement.appendChild(element('td', type));
+  content: '';
 
-					});
+  width: var(--width);
 
-				});
+  height: var(--height);
 
-				return table;
+  background-size: calc(var(--width) * var(--x)) calc(var(--height) * var(--y));
 
-			};
+  background-repeat: no-repeat;
 
+  image-rendering: pixelated;
 
+  background-position: var(--bx) var(--by);
 
-			DOMDisplay.prototype.drawActors = function () {
+}
 
-				var wrap = element('div');
 
-				this.level.actors.forEach(function (actor) {
 
-					var rect = wrap.appendChild(element('div', 'actor ' + actor.type));
+.map-cover {
 
-					rect.style.width = actor.size.x * scale + 'px';
+  position: absolute;
 
-					rect.style.height = actor.size.y * scale + 'px';
+  width: 100%;
 
-					rect.style.left = actor.pos.x * scale + 'px';
+  height: 100%;
 
-					rect.style.top = actor.pos.y * scale + 'px';
+  background-repeat: repeat;
 
-				});
+  image-rendering: pixelated;
 
-				return wrap;
+}
 
-			};
 
 
+.map {
 
-			DOMDisplay.prototype.drawFrame = function () {
+  position: absolute;
 
-				if (this.actorLayer) this.wrap.removeChild(this.actorLayer);
+  top: 0;
 
-				this.actorLayer = this.wrap.appendChild(this.drawActors());
+  left: 0;
 
-				this.wrap.className = 'game ' + (this.level.status || '');
+  transition: 0.4s;
 
-				this.scrollPlayerIntoView();
+  background-color: #b7e3ee;
 
-			};
+}
 
 
 
-			// clear it later
+.map.slow-transition {
 
-			DOMDisplay.prototype.scrollPlayerIntoView = function () {
+  transition: 1.8s;
 
-				var width = this.wrap.clientWidth;
+}
 
-				var height = this.wrap.clientHeight;
 
-				var margin = width / 3;
 
+.map.transition {
 
+  transition: 0s;
 
-				// The viewport
+}
 
-				var left = this.wrap.scrollLeft,
 
-					right = left + width;
 
-				var top = this.wrap.scrollTop,
+.player-wrapper {
 
-					bottom = top + height;
+  position: fixed;
 
+  top: 0;
 
+  left: 0;
 
-				var player = this.level.player;
+  width: 100%;
 
-				var center = player.pos.plus(player.size.times(0.5)).times(scale);
+  height: 100%;
 
+}
 
 
-				if (center.x < left + margin) this.wrap.scrollLeft = center.x - margin;
 
-				else if (center.x > right - margin)
+.tree {
 
-					this.wrap.scrollLeft = center.x + margin - width;
+  position: absolute;
 
-				if (center.y < top + margin) this.wrap.scrollTop = center.y - margin;
+  width: 0;
 
-				else if (center.y > bottom - margin)
+  height: 0;
 
-					this.wrap.scrollTop = center.y + margin - height;
+}
 
-			};
 
 
+.tree > div {
 
-			DOMDisplay.prototype.clear = function () {
+  position: absolute;
 
-				this.wrap.parentNode.removeChild(this.wrap);
+  --w: 24px;
 
-			};
+  --h: 30px;
 
+  --m: 3;
 
+  --width: calc(var(--w) * var(--m));
 
-			Level.prototype.obstacleAt = function (pos, size) {
+  --height: calc(var(--h) * var(--m));
 
-				var xStart = Math.floor(pos.x);
+  width: var(--width);
 
-				var xEnd = Math.ceil(pos.x + size.x);
+  height: var(--width);
 
-				var yStart = Math.floor(pos.y);
+  left: calc((var(--m) / -2) * var(--w));
 
-				var yEnd = Math.ceil(pos.y + size.y);
+  top: calc((var(--m) / -2) * var(--w));
 
+}
 
 
-				if (xStart < 0 || xEnd > this.width || yStart < 0) return 'wall';
 
-				if (yEnd > this.height) return 'lava';
+.tree > div::after {
 
-				for (var y = yStart; y < yEnd; y++) {
+  position: absolute;
 
-					for (var x = xStart; x < xEnd; x++) {
+  content: '';
 
-						var fieldType = this.grid[y][x];
+  bottom: 0;
 
-						if (fieldType) return fieldType;
+  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAeCAYAAAA2Lt7lAAAAAXNSR0IArs4c6QAAAKJJREFUSEvtlssRgCAMRKUwu7AdT7ZjFxamIzM4gIRdg8YLXIF9bD5M3ECubV32+Og4zY65Sh3KxYMwA4EASZyFVAFInIGIAFYcQYqAp+I1yA2gFZcgCaBVvAS5AG+J5xA7QNyVWjelxutJFv+7EC4fIm3M0W96QmwA+Uu0jnoVoZwm+3ZVpE0oa8d9DjBptJpd5BCNLv+OLUz4ugOf/5bZ9ACJXnYB/NLxRwAAAABJRU5ErkJggg==);
 
-					}
+  image-rendering: pixelated;
 
-				}
+  background-repeat: no-repeat;
 
-			};
+  width: var(--width);
 
+  height: var(--height);
 
+  background-size: var(--width) var(--height); 
 
-			Level.prototype.actorAt = function (actor) {
+}
 
-				for (var i = 0; i < this.actors.length; i++) {
 
-					var other = this.actors[i];
 
-					if (
+/* other */
 
-						other != actor &&
 
-						actor.pos.x + actor.size.x > other.pos.x &&
 
-						actor.pos.x < other.pos.x + other.size.x &&
+.sign {
 
-						actor.pos.y + actor.size.y > other.pos.y &&
+  position: fixed;
 
-						actor.pos.y < other.pos.y + other.size.y
+  font-family: Arial, Helvetica, sans-serif;
 
-					)
+  color: #57280f;
 
-						return other;
+  bottom: 10px;
 
-				}
+  right: 10px;
 
-			};
+  font-size: 10px;
 
+  text-transform: none;
 
+}
 
-			var maxStep = 0.05;
 
 
+.indicator {
 
-			Level.prototype.animate = function (step, keys) {
+  position: absolute;
 
-				if (this.status != null) this.finishDelay -= step;
+  top: 24px;
 
+  right: 16px;
 
+  color: #57280f;
 
-				while (step > 0) {
+  font-size: 16px;
 
-					var thisStep = Math.min(step, maxStep);
+  opacity: 0.8;
 
-					this.actors.forEach(function (actor) {
+  z-index: 999;
 
-						actor.act(thisStep, this, keys);
+  pointer-events: none;
 
-					}, this);
+  height: 32px;
 
-					step -= thisStep;
+  width: 36px;
 
-				}
+  line-height: 40px;
 
-			};
+}
 
 
 
-			Lava.prototype.act = function (step, level) {
+.indicator::before {
 
-				var newPos = this.pos.plus(this.speed.times(step));
+  position: absolute;
 
-				if (!level.obstacleAt(newPos, this.size)) this.pos = newPos;
+  content: '';
 
-				else if (this.repeatPos) this.pos = this.repeatPos;
+  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAQCAYAAAAbBi9cAAAAAXNSR0IArs4c6QAAALRJREFUOE+llNsNgCAMRWUCHUMn0hF1Ih1DJ8CU2OZSofXBD5KWw6EIobna2LeRv6lftiPg2IunZEqa1x3nNdPQCcyL08QqiIIMK4EwLiC2YiW201ZWXOoQY8xqJLUbuqStt24alZKzwqkBGotRrQ6vQF8gvABbhT8QhN1AtIJXK51D4wz0BIIW+Ju4WyM4NcvyZqRPCA0t2wSq3TXr2DEmp4a33ytyyZhfieyp0HfOstLPzAmHG47SmZBqWwAAAABJRU5ErkJggg==);
 
-				else this.speed = this.speed.times(-1);
+  width: 36px;
 
-			};
+  height: 32px;
 
+  background-size: 100%;
 
+  image-rendering: pixelated;
 
-			var wobbleSpeed = 8,
+  left: -42px;
 
-				wobbleDist = 0.07;
+}
 
 
 
-			Coin.prototype.act = function (step) {
+.indicator.happy::before {
 
-				this.wobble += step * wobbleSpeed;
+  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAYAAABWzo5XAAAAAXNSR0IArs4c6QAAAKNJREFUOE/lVMERgCAMsxPIGDqRjqgT6Rg6Qb1worVg68PzIz9oCGnSgyq1uqZmHI3zSrqG/V39AgZomJZ4v29DRmbVDyIJSkokmVf/K1FMqQ3RsnEPQSYpPTQ9KsX/DVEpWk+NHhHSJOg7DeUdmcZgfyFKAIushMmInrajcS6RVOapzDwqvYYzy7eoKH0NnsGW8fhy3h9IvMjMDJlPFjogOoVseByz1PgRF28AAAAASUVORK5CYII=);
 
-				var wobblePos = Math.sin(this.wobble) * wobbleDist;
+  height: 36px;
 
-				this.pos = this.basePos.plus(new Vector(0, wobblePos));
+  top: -4px;
 
-			};
+}
 
 
 
-			var playerXSpeed = 10;
+a {
 
+  color: #57280f;
 
+  text-decoration: none;
 
-			Player.prototype.moveX = function (step, level, keys) {
+  text-transform: none;
 
-				this.speed.x = 0;
+}
 
-				if (keys.left) this.speed.x -= playerXSpeed;
 
-				if (keys.right) this.speed.x += playerXSpeed;
 
+a:hover { text-decoration: underline; }
 
 
-				var motion = new Vector(this.speed.x * step, 0);
-
-				var newPos = this.pos.plus(motion);
-
-				var obstacle = level.obstacleAt(newPos, this.size);
-
-				if (obstacle) level.playerTouched(obstacle);
-
-				else this.pos = newPos;
-
-			};
-
-
-
-			var gravity = 30;
-
-			var jumpSpeed = 17;
-
-
-
-			Player.prototype.moveY = function (step, level, keys) {
-
-				this.speed.y += step * gravity;
-
-				var motion = new Vector(0, this.speed.y * step);
-
-				var newPos = this.pos.plus(motion);
-
-				var obstacle = level.obstacleAt(newPos, this.size);
-
-				if (obstacle) {
-
-					level.playerTouched(obstacle);
-
-					if (keys.up && this.speed.y > 0) this.speed.y = -jumpSpeed;
-
-					else this.speed.y = 0;
-
-				} else {
-
-					this.pos = newPos;
-
-				}
-
-			};
-
-
-
-			Player.prototype.act = function (step, level, keys) {
-
-				this.moveX(step, level, keys);
-
-				this.moveY(step, level, keys);
-
-
-
-				var otherActor = level.actorAt(this);
-
-				if (otherActor) level.playerTouched(otherActor.type, otherActor);
-
-
-
-				// Losing animation
-
-				if (level.status == 'lost') {
-
-					this.pos.y += step;
-
-					this.size.y -= step;
-
-				}
-
-			};
-
-
-
-			Level.prototype.playerTouched = function (type, actor) {
-
-				if (type == 'lava' && this.status == null) {
-
-					this.status = 'lost';
-
-					this.finishDelay = 1;
-
-				} else if (type == 'coin') {
-
-					this.actors = this.actors.filter(function (other) {
-
-						return other != actor;
-
-					});
-
-					if (
-
-						!this.actors.some(function (actor) {
-
-							return actor.type == 'coin';
-
-						})
-
-					) {
-
-						this.status = 'won';
-
-						this.finishDelay = 1;
-
-					}
-
-				}
-
-			};
-
-
-
-			var arrowCodes = { 37: 'left', 38: 'up', 39: 'right' };
-
-
-
-			function trackKeys(codes) {
-
-				var pressed = Object.create(null);
-
-				function handler(event) {
-
-					if (codes.hasOwnProperty(event.keyCode)) {
-
-						var down = event.type == 'keydown';
-
-						pressed[codes[event.keyCode]] = down;
-
-						event.preventDefault();
-
-					}
-
-				}
-
-				addEventListener('keydown', handler);
-
-				addEventListener('keyup', handler);
-
-				return pressed;
-
-			}
-
-
-
-			function runAnimation(frameFunc) {
-
-				var lastTime = null;
-
-				function frame(time) {
-
-					var stop = false;
-
-					if (lastTime != null) {
-
-						var timeStep = Math.min(time - lastTime, 100) / 1000;
-
-						stop = frameFunc(timeStep) === false;
-
-					}
-
-					lastTime = time;
-
-					if (!stop) requestAnimationFrame(frame);
-
-				}
-
-				requestAnimationFrame(frame);
-
-			}
-
-
-
-			var arrows = trackKeys(arrowCodes);
-
-
-
-			function runLevel(level, Display, andThen) {
-
-				var display = new Display(document.body, level);
-
-				runAnimation(function (step) {
-
-					level.animate(step, arrows);
-
-					display.drawFrame(step);
-
-					if (level.isFinished()) {
-
-						display.clear();
-
-						if (andThen) andThen(level.status);
-
-						return false;
-
-					}
-
-				});
-
-			}
-
-
-
-			function runGame(plans, Display) {
-
-				function startLevel(n) {
-
-					runLevel(new Level(plans[n]), Display, function (status) {
-
-						if (status == 'lost') startLevel(n);
-
-						else if (n < plans.length - 1) startLevel(n + 1);
-
-						else alert('You win!');
-
-					});
-
-				}
-
-				startLevel(0);
-
-			}
-
-
-
-			runGame(LEVELS, DOMDisplay);
-
-		</script>
-
-	</body>
-
-</html>
 
